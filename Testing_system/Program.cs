@@ -1,4 +1,4 @@
-﻿namespace Testing_system
+﻿namespace Quiz
 {
     internal class Program
     {
