@@ -6,33 +6,50 @@ using System.Threading.Tasks;
 
 namespace Quiz
 {
-    internal class Question
+    [Serializable]
+    internal class Question : IEquatable<Question?>
     {
-        public string Description { get; set; }
-        private List<string> _answerOptions;
-        public List<string> AnswerOptions 
+        #region Basic data
+        public string Text { get; set; } // Текст питання
+        public List<string> Options { get; set; } // Варіанти відповідей
+        public List<int> CorrectAnswers { get; set; } // Індекси правильних відповідей
+        
+
+        #endregion
+        //===========================================
+        #region ctors
+        public Question(string text, List<string> options, List<int> correctAnswers)
         {
-            //get => answerOptions ??= new List<string>();
-            get => _answerOptions;
-            private set
-            {
-                if (value.Count < 2) 
-                    throw new ArgumentException("There should be more than 2 answer options");
-                _answerOptions = value;
-            }
+            Text = text;
+            Options = options;
+            CorrectAnswers = correctAnswers;
         }
-        private List<int> _answersCorrect;
-        private List<int> AnswersCorrect 
-        { 
-            get => (0 < _answerOptions.Count ? _answersCorrect : null); 
-            set
-            {
-                if (AnswerOptions.Count <= value.Count)
-                    throw new ArgumentException("There should be fewer correct answers than total answers");
-                else if (value.Count < 1)
-                    throw new ArgumentException("There must be one or more correct answers");
-                _answersCorrect = value; 
-            }
+     
+        #endregion
+        //===========================================
+        #region Inherited methods
+        public override string ToString() => Text;
+
+        public override bool Equals(object? obj) => Equals(obj as Question);
+        public bool Equals(Question? other)
+        {
+            return other is not null &&
+                   Text == other.Text &&
+                   EqualityComparer<List<string>>.Default.Equals(Options, other.Options) &&
+                   EqualityComparer<List<int>>.Default.Equals(CorrectAnswers, other.CorrectAnswers);
         }
+        public override int GetHashCode() 
+            => HashCode.Combine(Text, Options, CorrectAnswers);
+        public static bool operator ==(Question? left, Question? right) 
+            => EqualityComparer<Question>.Default.Equals(left, right);
+        public static bool operator !=(Question? left, Question? right) 
+            => !(left == right);
+
+
+        #endregion
+        //===========================================
+        #region Own methods
+
+        #endregion
     }
 }

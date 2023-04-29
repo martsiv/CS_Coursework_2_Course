@@ -6,10 +6,13 @@ using System.Threading.Tasks;
 
 namespace Quiz
 {
+    [Serializable]
     internal class Quiz
     {
+        #region Basic data
+        public string QuizSection { get; set; }
         private List<Question> _questions;
-        public List<Question> Questions 
+        public List<Question> Questions
         {
             get => _questions;
             private set
@@ -19,5 +22,23 @@ namespace Quiz
                 _questions = value;
             }
         }
+        #endregion
+        //===========================================
+        #region ctors
+        public Quiz()
+        {
+            _questions = new List<Question>();
+
+        }
+        #endregion
+        //===========================================
+        #region Inherited methods
+
+        #endregion
+        //===========================================
+        #region Own methods
+
+        #endregion
+
     }
 }

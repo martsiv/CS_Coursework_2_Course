@@ -6,9 +6,27 @@ using System.Threading.Tasks;
 
 namespace Quiz
 {
-    internal class QuizResult
+    [Serializable]
+    internal class QuizResult : IComparable<QuizResult>
     {
-        //Кожен елемент колекції QuizResult містить інформацію про результати
-        //конкретної вікторини, такі як список користувачів та їх результатів.
+
+        public string UserName { get; }
+        public string QuizSection { get; }
+        public int Result { get; }
+        public TimeSpan Time { get; }
+        public QuizResult(string userName, string quizSection, int result, TimeSpan time)
+        {
+            UserName = userName;
+            QuizSection = quizSection;
+            Result = result;
+            Time = time;
+        }
+
+        public int CompareTo(QuizResult? other)
+        {
+            if (other == null)
+                return 1;
+            return QuizSection.CompareTo(other.QuizSection);
+        }
     }
 }
