@@ -10,21 +10,27 @@ namespace Quiz
     internal class Question : IEquatable<Question?>
     {
         #region Basic data
-        public string Text { get; set; } // Текст питання
-        public List<string> Options { get; set; } // Варіанти відповідей
-        public List<int> CorrectAnswers { get; set; } // Індекси правильних відповідей
+        public string Topic { get; set; }               // Розділ
+        public string Text { get; set; }                // Текст питання
+        public List<string> Options { get; set; }       // Варіанти відповідей
+        public List<int> CorrectAnswers { get; set; }   // Індекси правильних відповідей
         
 
         #endregion
         //===========================================
         #region ctors
-        public Question(string text, List<string> options, List<int> correctAnswers)
+        public Question(string topic, string text, List<string> options, List<int> correctAnswers)
         {
+            Topic = topic;
             Text = text;
             Options = options;
             CorrectAnswers = correctAnswers;
         }
-     
+        public Question()
+        {
+            Options = new List<string>();
+            CorrectAnswers = new List<int>();
+        }
         #endregion
         //===========================================
         #region Inherited methods
@@ -34,12 +40,12 @@ namespace Quiz
         public bool Equals(Question? other)
         {
             return other is not null &&
-                   Text == other.Text &&
-                   EqualityComparer<List<string>>.Default.Equals(Options, other.Options) &&
-                   EqualityComparer<List<int>>.Default.Equals(CorrectAnswers, other.CorrectAnswers);
+                   Topic == other.Topic &&
+                   Options == other.Options &&
+                   Text == other.Text;
         }
         public override int GetHashCode() 
-            => HashCode.Combine(Text, Options, CorrectAnswers);
+            => HashCode.Combine(Topic, Text, Options, CorrectAnswers);
         public static bool operator ==(Question? left, Question? right) 
             => EqualityComparer<Question>.Default.Equals(left, right);
         public static bool operator !=(Question? left, Question? right) 

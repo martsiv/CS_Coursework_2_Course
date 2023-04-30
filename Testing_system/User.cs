@@ -35,8 +35,8 @@ namespace Quiz
         public bool Equals(User? other)
         {
             return other is not null &&
-                   _login == other._login &&
-                   birthday.Equals(other.birthday);
+                   Login == other.Login &&
+                   Birthday.Equals(other.Birthday);
         }
         public override int GetHashCode()
             => HashCode.Combine(Login, Birthday);
