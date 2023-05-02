@@ -10,7 +10,7 @@ namespace Quiz
     internal class User : IEquatable<User?>
     {
         #region Basic data
-        public string Login { get; set; }
+        public string Login { get; init; }
         public string HashPassword { get; set; }
         public DateTime Birthday { get; set; }
         #endregion
