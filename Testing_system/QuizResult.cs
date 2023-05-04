@@ -8,9 +8,8 @@ using System.Xml.Linq;
 namespace Quiz
 {
     [Serializable]
-    internal class QuizResult : IComparable<QuizResult>, IEquatable<string>
+    internal class QuizResult : IComparable<QuizResult>
     {
-
         public string UserName { get; }
         public string QuizSection { get; }
         public int NumberOfQuestions { get; }
@@ -64,25 +63,5 @@ namespace Quiz
 
             return false;
         }
-
-        //public override int GetHashCode()
-        //{
-        //    return UserName.GetHashCode();
-        //}
-
-        public override int GetHashCode()
-        {
-            return HashCode.Combine(UserName);
-        }
-
-        //public static bool operator ==(QuizResult? left, QuizResult? right)
-        //{
-        //    return EqualityComparer<QuizResult>.Default.Equals(left, right);
-        //}
-
-        //public static bool operator !=(QuizResult? left, QuizResult? right)
-        //{
-        //    return !(left == right);
-        //}
     }
 }

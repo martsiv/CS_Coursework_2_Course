@@ -9,6 +9,8 @@ using System.Threading.Tasks;
 using System.Xml.Serialization;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using System.Security.Cryptography;
+using System.Runtime.Serialization;
+using System.Xml;
 #pragma warning disable SYSLIB0011 
 
 namespace Quiz
@@ -122,20 +124,14 @@ namespace Quiz
             }
             return m[string1.Length, string2.Length];
         }
-        private int GetNumber(int leftRange, int rightRange)
-        {
-            int? result = 0;
-            do
-                result = int.Parse(Console.ReadLine());
-            while (result == null || result < leftRange || rightRange < result);
-            return result.Value;
-        }
         private KeyValuePair<string, string> EnterCorrectLoginAndEncryptedPassword()
         {
             string login = CreateLogin();
+            Console.Write("Enter the password: ");
             string password = CreatePassword();
             return new KeyValuePair<string, string>(login, EncryptMD5(password));
         }
+
         private string CreateLogin()
         {
             string login;
@@ -151,12 +147,12 @@ namespace Quiz
             }
             return login;
         }
-        private string CreatePassword() 
+        private string CreatePassword()
         {
             string password;
             while (true)
             {
-                Console.Write("Enter your password: ");
+                //Console.Write("Enter the password: ");
                 password = Console.ReadLine();
                 if (password == null || password.Any(char.IsWhiteSpace) || !password.Any(char.IsDigit) || !password.Any(char.IsLetter) || password.Length < 2 || password.Length > 20)
                     Console.WriteLine("Invalid password");
@@ -175,6 +171,7 @@ namespace Quiz
                     Console.WriteLine("Invalid birth date");
                 else break;
             }
+            Console.WriteLine("Success!");
             return birth;
         }
         private string EncryptMD5(string password)
@@ -184,6 +181,7 @@ namespace Quiz
             string hashedPassword = BitConverter.ToString(hashedBytes).Replace("-", "").ToLower();
             return hashedPassword;
         }
+
         #endregion Utility
 
         #region Filework
@@ -213,15 +211,30 @@ namespace Quiz
         }
         private void Save()
         {
+            SaveUsersXML();
             SaveUsers();
+            SaveQuestionsXML();
             SaveQuestions();
+            SaveResultXML();
             SaveResult();
+        }
+        private void SaveXML()
+        {
+            SaveUsersXML();
+            SaveQuestionsXML();
+            SaveResultXML();
         }
         private void Load()
         {
-            LoadUsers();
-            LoadQuestions();
-            LoadResult();
+            LoadUsersXML();
+            LoadQuestionsXML();
+            LoadResultXML();
+        }
+
+        private void LoadXML()
+        {
+            LoadQuestionsXML();
+            LoadResultXML();
         }
         private void SaveUsers()
         {
@@ -231,6 +244,15 @@ namespace Quiz
                 formatter.Serialize(fs, _users);
             }
         }
+
+        private void SaveUsersXML()
+        {
+            FileStream writer = new FileStream("users.xml", FileMode.Create);
+            DataContractSerializer ser =
+                new DataContractSerializer(typeof(Dictionary<string, User>));
+            ser.WriteObject(writer, _users);
+            writer.Close();
+        }
         private void SaveQuestions()
         {
             BinaryFormatter formatter = new BinaryFormatter();
@@ -239,6 +261,15 @@ namespace Quiz
                 formatter.Serialize(fs, _questions);
             }
         }
+
+        private void SaveQuestionsXML()
+        {
+            FileStream writer = new FileStream("questions.xml", FileMode.Create);
+            DataContractSerializer ser =
+                new DataContractSerializer(typeof(SortedDictionary<string, List<Question>>));
+            ser.WriteObject(writer, _questions);
+            writer.Close();
+        }
         private void SaveResult()
         {
             BinaryFormatter formatter = new BinaryFormatter();
@@ -246,6 +277,15 @@ namespace Quiz
             {
                 formatter.Serialize(fs, _quizResult);
             }
+        }
+
+        private void SaveResultXML()
+        {
+            FileStream writer = new FileStream("result.xml", FileMode.Create);
+            DataContractSerializer ser =
+                new DataContractSerializer(typeof(List<QuizResult>));
+            ser.WriteObject(writer, _quizResult);
+            writer.Close();
         }
         private void LoadUsers()
         {
@@ -258,6 +298,21 @@ namespace Quiz
                 }
             }
         }
+
+        private void LoadUsersXML()
+        {
+            Console.WriteLine("Deserializing an instance of the object.");
+            FileStream fs = new FileStream("users.xml",
+            FileMode.Open);
+            XmlDictionaryReader reader =
+                XmlDictionaryReader.CreateTextReader(fs, new XmlDictionaryReaderQuotas());
+            DataContractSerializer ser = new DataContractSerializer(typeof(Dictionary<string, User>));
+
+            // Deserialize the data and read it from the instance.
+            _users = (Dictionary<string, User>)ser.ReadObject(reader, true);
+            reader.Close();
+            fs.Close();
+        }
         private void LoadQuestions()
         {
             if (File.Exists("questions.bin"))
@@ -268,6 +323,21 @@ namespace Quiz
                     _questions = (SortedDictionary<string, List<Question>>)formatter.Deserialize(fs);
                 }
             }
+        }
+
+        private void LoadQuestionsXML()
+        {
+            Console.WriteLine("Deserializing an instance of the object.");
+            FileStream fs = new FileStream("questions.xml",
+            FileMode.Open);
+            XmlDictionaryReader reader =
+                XmlDictionaryReader.CreateTextReader(fs, new XmlDictionaryReaderQuotas());
+            DataContractSerializer ser = new DataContractSerializer(typeof(SortedDictionary<string, List<Question>>));
+
+            // Deserialize the data and read it from the instance.
+            _questions = (SortedDictionary<string, List<Question>>)ser.ReadObject(reader, true);
+            reader.Close();
+            fs.Close();
         }
         private void LoadResult()
         {
@@ -281,7 +351,22 @@ namespace Quiz
             }
         }
 
-        #endregion Filework
+        private void LoadResultXML()
+        {
+            Console.WriteLine("Deserializing an instance of the object.");
+            FileStream fs = new FileStream("result.xml",
+            FileMode.Open);
+            XmlDictionaryReader reader =
+                XmlDictionaryReader.CreateTextReader(fs, new XmlDictionaryReaderQuotas());
+            DataContractSerializer ser = new DataContractSerializer(typeof(List<QuizResult>));
+
+            // Deserialize the data and read it from the instance.
+            _quizResult = (List<QuizResult>)ser.ReadObject(reader, true);
+            reader.Close();
+            fs.Close();
+        }
+
+        #endregion FileWork
 
         #region User panel
         private void UserPanel(User user)
@@ -310,12 +395,13 @@ namespace Quiz
                         ShowTOP20();
                         break;
                     case ConsoleKey.D4:
-                        user.HashPassword = CreatePassword();
+                        ChangePassword(user);
                         break;
                     case ConsoleKey.D5:
                         user.Birthday = EnterCorrectBirth();
                         break;
                     case ConsoleKey.D9:
+                        Save();
                         Console.WriteLine("Goodbye!");
                         return;
                     default:
@@ -351,6 +437,8 @@ namespace Quiz
                 QuizResult result = quiz.RunQuiz(userName);
                 //Збереження результатів
                 _quizResult.Add(result);
+                Save();
+                ShowUsersStat(userName);
                 return;
             }
         }
@@ -375,31 +463,64 @@ namespace Quiz
         }
         private void ShowUsersStat(string userName)
         {
+            Console.WriteLine($"========= Statistics of the user {userName} =========");
+            int counter = 0;
             foreach (var item in _quizResult)
             {
-                if (item == (object)userName)
-                    Console.WriteLine($"{item.QuizSection}  {item.NumberOfQuestions}/{item.NumberOfQuestions} {item.ResultInPercent}%\n" +
+                if (item.UserName == userName)
+                    Console.WriteLine($"{counter++}\t{item.QuizSection}  {item.NumberOfCorrectAnswers}/{item.NumberOfQuestions} {item.ResultInPercent}%\n" +
                         $"Start test:\t{item.TimeOfStart}\n" +
                         $"End test: \t{item.TimeOfEnd}");
             }
+            Console.WriteLine("Press any key...");
+            Console.ReadKey();
         }
         private void ShowTOP20()
         {
+            Console.WriteLine($"========= Statistics TOP-20 =========");
             if (_quizResult.Count == 0)
                 return;
             //В QuizResult CompareTo сортування йде по розділах, а далі за результатом
             _quizResult.Sort();
             string topic = _quizResult[0].QuizSection;
-            for (int i = 0; i < _quizResult.Count;)
+            Console.WriteLine(topic);
+            for (int i = 0, j = 0; i < _quizResult.Count; i++, j++)
             {
-                Console.WriteLine(topic);
-                for (int j = 0; topic == _quizResult[i].QuizSection && j < 20; j++, i++)
+                if (topic != _quizResult[i].QuizSection)
                 {
-                    Console.WriteLine($"{j + 1} - {_quizResult[i].ResultInPercent}% {_quizResult[i].UserName}");
+                    j = 0;
+                    topic = _quizResult[i].QuizSection;
+                    Console.WriteLine(topic);
                 }
-                while (topic == _quizResult[i].QuizSection) { ++i; }
-                topic = _quizResult[i].QuizSection;
+                if (j < 20)
+                {
+                    Console.WriteLine($"{j + 1} - {_quizResult[i].UserName}. " +
+                        $"Answered {_quizResult[i].NumberOfCorrectAnswers}/{_quizResult[i].NumberOfQuestions} questions, " +
+                        $"percentage of correct answers {_quizResult[i].ResultInPercent}%");
+                }
             }
+            Console.WriteLine("Press any key...");
+            Console.ReadKey();
+        }
+        private void ChangePassword(User user)
+        {
+            Console.Write("Enter your old password: ");
+            string pass = Console.ReadLine();
+            if (string.IsNullOrEmpty(pass)) return;
+            if (EncryptMD5(pass) == user.HashPassword)
+            {
+                Console.Write("Enter your new password: ");
+                string newPassword = Console.ReadLine();
+                Console.Write("Repeat your new password: ");
+                if (Console.ReadLine() == newPassword)
+                {
+                    user.HashPassword = EncryptMD5(newPassword);
+                    Console.WriteLine("Success!");
+                    Console.ReadKey();
+                    return;
+                }
+            }
+            Console.WriteLine("Unsuccessfully!");
         }
 
         #endregion User panel
@@ -438,6 +559,7 @@ namespace Quiz
                         DeleteTopic();
                         break;
                     case ConsoleKey.D9:
+                        Save();
                         Console.WriteLine("Goodbye!");
                         return;
                     default:
@@ -499,7 +621,10 @@ namespace Quiz
                 for (int i = 0; i < options.Count; i++)
                     Console.WriteLine($"{i + 1} - {options[i]}");
                 Console.Write($"Enter an answer option #{options.Count + 1}: ");
-                options.Add(Console.ReadLine());
+                string answerTmp;
+                do answerTmp = Console.ReadLine();      //Перевіряє, щоб не було null або пустого рядка
+                while (string.IsNullOrWhiteSpace(answerTmp));
+                options.Add(answerTmp);
                 if (2 <= options.Count)
                 {
                     Console.WriteLine("Would you like to add another answer option? (Y, N)");
@@ -527,16 +652,25 @@ namespace Quiz
         }
         private int ReadCorrectAnswer(int maxOption, List<int> correctAnswers)  //Запросити ввід вірної відповіді відповідно до наданих варіантів відповідей
         {
-            int? answer = null;
-            Console.WriteLine("Enter a number of correct answer: ");
-            answer = int.Parse(Console.ReadLine());
-            if (answer == null)
-                Console.WriteLine("You must enter a number");
-            else if (answer <= 0 || answer > maxOption)
-                Console.WriteLine($"Rejected! The correct answer must be in the range from 1 to {maxOption}");
-            else if (correctAnswers.Contains(answer.Value - 1))
-                Console.WriteLine($"Rejected! Such a number of the correct answer has already been added");
-            return answer.Value;
+            int answer;
+            string tmp;
+            while (true)
+            {
+                Console.WriteLine("Enter a number of correct answer: ");
+                do
+                {
+                    tmp = Console.ReadLine();
+                }
+                while (!int.TryParse(tmp, out answer));
+
+                if (answer <= 0 || answer > maxOption)
+                    Console.WriteLine($"Rejected! The correct answer must be in the range from 1 to {maxOption}");
+                else if (correctAnswers.Contains(answer - 1))
+                    Console.WriteLine($"Rejected! Such a number of the correct answer has already been added");
+                else
+                    break;
+            }
+            return answer;
         }
         private void AddQuestion()
         {
