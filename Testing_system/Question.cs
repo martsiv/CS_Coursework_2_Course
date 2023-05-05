@@ -54,8 +54,5 @@ namespace Quiz
 
         #endregion
         //===========================================
-        #region Own methods
-
-        #endregion
     }
 }

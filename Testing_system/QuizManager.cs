@@ -55,7 +55,7 @@ namespace Quiz
                 Console.WriteLine
                 ("1 - Log in\n" +
                 "2 - Register\n" +
-                "3 - Exit");
+                "Q - Exit");
                 switch (Console.ReadKey().Key)
                 {
                     case ConsoleKey.D1:
@@ -65,7 +65,8 @@ namespace Quiz
                         Register();
                         Save();
                         break;
-                    case ConsoleKey.D3:
+                    case ConsoleKey.Q:
+                        Console.Clear();
                         Console.WriteLine("Goodbye!");
                         return;
                     default:
@@ -80,7 +81,7 @@ namespace Quiz
             Console.Write("\nEnter your login: ");
             string login = Console.ReadLine();
             Console.Write("Enter your password: ");
-            string password = EncryptMD5(Console.ReadLine());
+            string password = EncryptMD5(PasswordEnteringWithStars());
 
             if (login == adminData.Key && password == adminData.Value)
                 AdminPanel();
@@ -101,6 +102,7 @@ namespace Quiz
             DateTime birth = EnterCorrectBirth();
             _users.Add(loginPassword.Key, new User(loginPassword.Key, loginPassword.Value, birth));    //Add new user
         }
+
 
         #region Utility
         public static int LevenshteinDistance(string string1, string string2)
@@ -126,10 +128,26 @@ namespace Quiz
         }
         private KeyValuePair<string, string> EnterCorrectLoginAndEncryptedPassword()
         {
+            Console.Clear();
             string login = CreateLogin();
+            Console.Clear();
             Console.Write("Enter the password: ");
             string password = CreatePassword();
+            Console.Clear();
             return new KeyValuePair<string, string>(login, EncryptMD5(password));
+        }
+        private string PasswordEnteringWithStars()
+        {
+            string password = "";
+            while (true)
+            {
+                ConsoleKeyInfo key = Console.ReadKey(true);
+                if (key.Key == ConsoleKey.Enter)
+                    break;
+                password += key.KeyChar;
+                Console.Write("*");
+            }
+            return password;
         }
 
         private string CreateLogin()
@@ -153,7 +171,7 @@ namespace Quiz
             while (true)
             {
                 //Console.Write("Enter the password: ");
-                password = Console.ReadLine();
+                password = PasswordEnteringWithStars();
                 if (password == null || password.Any(char.IsWhiteSpace) || !password.Any(char.IsDigit) || !password.Any(char.IsLetter) || password.Length < 2 || password.Length > 20)
                     Console.WriteLine("Invalid password");
                 else break;
@@ -162,13 +180,22 @@ namespace Quiz
         }
         private DateTime EnterCorrectBirth()
         {
+            Console.Clear();
             DateTime birth;
             while (true)
             {
                 Console.Write("Enter your date of birth: ");
-                birth = DateTime.Parse(Console.ReadLine());
-                if ((DateTime.Now.Year - 5) < birth.Year || birth.Year < (DateTime.Now.Year - 120))
+                try
+                {
+                    birth = DateTime.Parse(Console.ReadLine());
+                }
+                catch (Exception)
+                {
                     Console.WriteLine("Invalid birth date");
+                    continue;
+                }
+                if ((DateTime.Now.Year - 5) < birth.Year || birth.Year < (DateTime.Now.Year - 120))
+                    Console.WriteLine("Your age must be between 5 and 120 years old");
                 else break;
             }
             Console.WriteLine("Success!");
@@ -373,45 +400,65 @@ namespace Quiz
         {
             Console.Clear();
             Console.WriteLine("============== Users control panel ==============");
+            ShowUserInformation(user);
             while (true)
             {
                 Console.Clear();
                 Console.WriteLine
                 ("1 - Start new Quiz\n" +
-                "2 - Show my stats\n" +
+                "2 - Show my statistics\n" +
                 "3 - Show TOP-20\n" +
                 "4 - Chenge password\n" +
                 "5 - Change my birth date\n" +
-                "9 - Exit");
+                "Q - Exit");
                 switch (Console.ReadKey().Key)
                 {
                     case ConsoleKey.D1:
+                        Console.Clear();
                         StartNewQuiz(user.Login);
+                        Console.ReadKey();
                         break;
                     case ConsoleKey.D2:
+                        Console.Clear();
                         ShowUsersStat(user.Login);
                         break;
                     case ConsoleKey.D3:
+                        Console.Clear();
                         ShowTOP20();
                         break;
                     case ConsoleKey.D4:
+                        Console.Clear();
                         ChangePassword(user);
                         break;
                     case ConsoleKey.D5:
+                        Console.Clear();
                         user.Birthday = EnterCorrectBirth();
                         break;
-                    case ConsoleKey.D9:
+                    case ConsoleKey.Q:
                         Save();
                         Console.WriteLine("Goodbye!");
                         return;
                     default:
+                        Console.Clear();
                         Console.WriteLine("Invalid input");
+                        Console.ReadKey();
                         break;
                 }
             }
         }
+        private void ShowUserInformation(User user)
+        {
+            Console.WriteLine($"User: {user.Login}. Birth date: {user.Birthday:dd.MM.yy}. Full years: {DateTime.Now.Year - user.Birthday.Year}\n");
+        }
         private void StartNewQuiz(string userName)
         {
+            Console.Clear();
+            if (_questions.Values.SelectMany(x => x).ToList().Count < 20)
+            {
+                Console.WriteLine("There are not enough questions in the system to start the test. Press any button to continue.");
+                Console.ReadKey();
+                return;
+            }
             while (true)
             {
                 //Тут ми формуємо квіз і всі атрибути для нього
@@ -420,30 +467,50 @@ namespace Quiz
                 string topic = Console.ReadLine();
                 if (string.IsNullOrEmpty(topic))
                     return;
-                if (!_questions.ContainsKey(topic))
+                if (!_questions.ContainsKey(topic) && !"Mixed questions".Contains(topic))
                 {
                     Console.WriteLine("Invalid topic name!");
                     continue;
                 }
-                if (_questions[topic].Count < 20)
+                if (!"Mixed questions".Contains(topic) && _questions[topic].Count < 20)
                 {
                     Console.WriteLine("Unfortunately, the topic does not contain an adequate number of questions in order to form a test from this topic");
                     continue;
                 }
-                Quiz quiz = new Quiz(topic, CreateQuestionListForQuiz(topic));
-                //Сформували квіз
+                //Формуємо квіз
+                Quiz quiz = null;
+                if ("Mixed questions".Contains(topic))
+                {
+                    topic = "Mixed questions";
+                    quiz = new Quiz(topic, CreateQuestionListForQuiz(topic, mixed: true));
+                }
+                else
+                    quiz = new Quiz(topic, CreateQuestionListForQuiz(topic));
 
                 //Проходження тесту
                 QuizResult result = quiz.RunQuiz(userName);
                 //Збереження результатів
                 _quizResult.Add(result);
                 Save();
-                ShowUsersStat(userName);
+                Console.WriteLine("\n" + result + "\nPress any button...");
+                Console.ReadKey();
                 return;
             }
         }
-        private List<Question> CreateQuestionListForQuiz(string topic, int num = 20)  //Рандомить ліст питань (20шт by default) під квіз
+        private List<Question> CreateQuestionListForQuiz(string topic, bool mixed = false, int num = 20)  //Рандомить ліст питань (20шт by default) під квіз
         {
+            //Якщо нам потрібно міксований квіз
+            if (mixed)
+            {
+                // Витягуємо всі питання з усіх тем
+                List<Question> allQuestions = _questions.Values.SelectMany(x => x).ToList(); //LINQ
+
+                // Випадково вибраємо 20 питань
+                Random rnd = new Random();
+                List<Question> randomQuestions = allQuestions.OrderBy(x => rnd.Next()).Take(20).ToList(); //LINQ
+                return randomQuestions;
+            }
+
             // Отримуємо всі питання, пов'язані з даною темою
             List<Question> questions = new List<Question>(_questions[topic]);
 
@@ -468,7 +535,7 @@ namespace Quiz
             foreach (var item in _quizResult)
             {
                 if (item.UserName == userName)
-                    Console.WriteLine($"{counter++}\t{item.QuizSection}  {item.NumberOfCorrectAnswers}/{item.NumberOfQuestions} {item.ResultInPercent}%\n" +
+                    Console.WriteLine($"{1 + counter++}\t{item.QuizSection}  {item.NumberOfCorrectAnswers}/{item.NumberOfQuestions} {item.ResultInPercent}%\n" +
                         $"Start test:\t{item.TimeOfStart}\n" +
                         $"End test: \t{item.TimeOfEnd}");
             }
@@ -540,7 +607,9 @@ namespace Quiz
                 "3 - Delete question\n" +
                 "4 - Modify question\n" +
                 "5 - Delete topic\n" +
-                "9 - Exit");
+                "6 - Show all statistics\n" +
+                "7 - Show all topics\n" +
+                "Q - Exit");
                 switch (Console.ReadKey().Key)
                 {
                     case ConsoleKey.D1:
@@ -558,8 +627,17 @@ namespace Quiz
                     case ConsoleKey.D5:
                         DeleteTopic();
                         break;
-                    case ConsoleKey.D9:
+                    case ConsoleKey.D6:
+                        ShowAllStat();
+                        break;
+                    case ConsoleKey.D7:
+                        Console.Clear();
+                        ShowTopicsList();
+                        Console.ReadKey();
+                        break;
+                    case ConsoleKey.Q:
                         Save();
+                        Console.Clear();
                         Console.WriteLine("Goodbye!");
                         return;
                     default:
@@ -573,21 +651,29 @@ namespace Quiz
 
         private void ShowTopicsList()
         {
+            if (_questions.Count == 0)
+            {
+                Console.WriteLine("There are no topics and questions. Press any button to return.");
+                Console.ReadKey();
+                return;
+            }
             Console.WriteLine("====== All topics ======");
             foreach (var item in _questions)
                 Console.WriteLine($"\t- {item.Key}");
+            Console.WriteLine($"\t- Mixed questions");
         }
         private void ShowAllQuestions(string topic = null)
         {
+            Console.Clear();
             Console.WriteLine("=========== All question ============");
             foreach (var item in _questions)
             {
                 if (topic == null || topic == item.Key)     //Якщо ключ не задано, то показує все. Інакше, лише певний розділ
                 {
-                    Console.WriteLine(item.Key);
+                    Console.WriteLine("\t\t" + item.Key);
                     foreach (var item1 in item.Value)
                     {
-                        Console.WriteLine(item1.Text);
+                        Console.WriteLine("\n\t- " + item1.Text + " -");
                         for (int i = 0; i < item1.Options.Count; i++)
                         {
                             foreach (var item2 in item1.CorrectAnswers)
@@ -597,6 +683,7 @@ namespace Quiz
                             Console.ResetColor();
                         }
                     }
+                    Console.WriteLine();
                 }
             }
             Console.WriteLine("Press eny button co continue");
@@ -630,6 +717,7 @@ namespace Quiz
                     Console.WriteLine("Would you like to add another answer option? (Y, N)");
                     key = Console.ReadKey().Key;
                 }
+                Console.Clear();
             }
             return options;
         }
@@ -646,8 +734,11 @@ namespace Quiz
                         break;
                 }
                 correctAnswers.Add(ReadCorrectAnswer(options.Count, correctAnswers) - 1);
+                Console.Clear();
                 ShowOptions(options, correctAnswers);
             }
+            Console.WriteLine("Press any button to continue...");
+            Console.ReadKey();
             return correctAnswers;
         }
         private int ReadCorrectAnswer(int maxOption, List<int> correctAnswers)  //Запросити ввід вірної відповіді відповідно до наданих варіантів відповідей
@@ -674,6 +765,8 @@ namespace Quiz
         }
         private void AddQuestion()
         {
+            Console.Clear();
+            Console.WriteLine("============== Adding a new question ==============");
             Console.Write("Enter the quiz topic: ");                //Додати розділ
             string topic = FindExistingTopic(Console.ReadLine());
             if (string.IsNullOrEmpty(topic))
@@ -701,6 +794,8 @@ namespace Quiz
         }
         private void DeleteQuestion()
         {
+            Console.Clear();
+            Console.WriteLine("====================== Deleting question ======================");
             Question question = FindQuestionByKeyword();
             if (question == null)
                 return;
@@ -735,6 +830,7 @@ namespace Quiz
             if (!_questions.TryGetValue(topicInput, out List<Question> questions))
             {
                 Console.WriteLine($"Topic '{topicInput}' not found.");
+                Console.ReadKey();
                 return null;
             }
 
@@ -749,14 +845,12 @@ namespace Quiz
             {
                 if (question.Text.ToLower().Contains(keyword.ToLower()))
                 {
+                    Console.Clear();
                     Console.WriteLine($"Found a question with matching keyword in topic '{topicInput}':");
                     Console.WriteLine(question.Text);
                     Console.WriteLine("Is this the question you are looking for? (y/n)");
-                    string answer = Console.ReadLine();
-                    if (answer.ToLower() == "y")
-                    {
-                        return question;
-                    }
+                    if (Console.ReadKey().Key == ConsoleKey.Y)
+                            return question;
                 }
             }
 
@@ -765,11 +859,15 @@ namespace Quiz
         }
         private void ModifyQuestion()
         {
+            Console.Clear();
+            Console.WriteLine("====================== Modification of the question ======================");
             Question question = FindQuestionByKeyword();
             if (question == null)
                 return;
             while (true)
             {
+                Console.Clear();
+                Console.WriteLine(question);
                 Console.WriteLine("You can change the description, options and correct answers. Click to change:\n" +
                 "1 - Description\n" +
                 "2 - Options and Correct answers\n" +
@@ -778,23 +876,30 @@ namespace Quiz
                 switch (Console.ReadKey().Key)
                 {
                     case ConsoleKey.D1:                     //Змінює опис
+                        Console.Write("\nEnter new text of the question: ");
                         string text = Console.ReadLine();
                         if (string.IsNullOrEmpty(text))
                             break;
                         question.Text = text;
+                        Console.WriteLine("Success!");
+                        Console.ReadKey();
                         break;
                     case ConsoleKey.D2:                     //Змінює варіанти відповідей, та нові вірні відповіді
                         question.Options = GetOptions();
                         question.CorrectAnswers = GetCorrectAnswers(question.Options);
+                        Console.WriteLine("Success!");
+                        Console.ReadKey();
                         break;
                     case ConsoleKey.D3:                     //Змінює лише вірні відповіді
                         question.CorrectAnswers = GetCorrectAnswers(question.Options);
+                        Console.WriteLine("Success!");
+                        Console.ReadKey();
                         break;
                     case ConsoleKey.D9:
-                        Console.WriteLine("Goodbye!");
                         return;
                     default:
                         Console.WriteLine("Invalid input");
+                        Console.Clear();
                         break;
                 }
             }
@@ -824,6 +929,8 @@ namespace Quiz
         }
         private void DeleteTopic(string topicInput = null)
         {
+            Console.Clear();
+            Console.WriteLine("====================== Deleting topic ======================");
             if (string.IsNullOrEmpty(topicInput))       //Якщо аргумент пустий, запросити ввід вручну, якщо ні, перейти до кроку 2
             {
                 ShowTopicsList();
@@ -838,18 +945,38 @@ namespace Quiz
                 if (Console.ReadKey().Key == ConsoleKey.Y)
                 {
                     _questions.Remove(topicInput);
+                    DeleteTopicInQuizResult(topicInput);        //При видаленні топіку, він також видаляється зі статистики
+                    Console.WriteLine("Success! Press any button...");
+                    Console.ReadKey();
                     Save();
                 }
             }
         }
-        #endregion
 
+        # endregion Question control
+
+        #region Stat Control
+        private void DeleteTopicInQuizResult(string topicInput)
+        {
+            foreach (var item in _quizResult)
+            {
+                if (item.QuizSection == topicInput)
+                    _quizResult.Remove(item);
+            }
+        }
+        private void ShowAllStat()
+        {
+            Console.Clear();
+            Console.WriteLine("=============== All statistics ===============");
+            _quizResult.Sort();
+            foreach (var item in _quizResult)
+                Console.WriteLine(item + "\n");
+            Console.WriteLine("Press any button...");
+            Console.ReadKey();
+        }
+
+        # endregion Stat Control
         #endregion Admin panel
         #endregion Own methods
-
-        #region Inherited methods
-
-        #endregion Inherited methods
-
     }
 }

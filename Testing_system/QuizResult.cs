@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.Metrics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -38,7 +39,7 @@ namespace Quiz
             if (result == 0)
             {
                 // Якщо розділи співпали, порівнюємо за результатом
-                result = ResultInPercent == other.ResultInPercent ? 0 : ResultInPercent < other.ResultInPercent ? -1 : 1;
+                result = ResultInPercent == other.ResultInPercent ? 0 : ResultInPercent < other.ResultInPercent ? 1 : -1;
             }
     
             return result;
@@ -48,7 +49,6 @@ namespace Quiz
         {
             return UserName.Equals(other);
         }
-
 
         public override bool Equals(object obj)
         {
@@ -62,6 +62,14 @@ namespace Quiz
                 return Equals(otherClass.UserName);
 
             return false;
+        }
+
+        public override string? ToString()
+        {
+            return $"Topic - {QuizSection}. Result {NumberOfCorrectAnswers}/{NumberOfQuestions} {ResultInPercent}%\n" +
+                        $"User:\t\t{UserName}\n" +
+                        $"Start test:\t{TimeOfStart}\n" +
+                        $"End test: \t{TimeOfEnd}";
         }
     }
 }

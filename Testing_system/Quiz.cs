@@ -30,22 +30,21 @@ namespace Quiz
   
         #endregion
         //===========================================
-        #region Inherited methods
         public QuizResult RunQuiz(string userName)
         {
+            Console.Clear();
+            StartupInformation();   //Початкове повідомлення, загальна інформація про умови проходження
             // Отримуємо час початку тесту
             DateTime startTime = DateTime.Now;
 
             // Запускаємо тест
+            int progress = 1;
             int correctAnswersCount = 0;
             foreach (var question in Questions)
             {
-                Console.WriteLine(question.Text);
-                for (int i = 0; i < question.Options.Count; i++)
-                {
-                    Console.WriteLine($"{i + 1}. {question.Options[i]}");
-                }
-
+                Console.Clear();
+                ShowInformationInQuiz(userName, correctAnswersCount, progress, question);
+                //Зчитуємо варіанти відповідей посимвольно
                 Console.Write("Your answer(s): ");
                 string[] selectedAnswers = Console.ReadLine()?.Split(",");
                 List<int> selectedIndexes = new List<int>();
@@ -56,12 +55,13 @@ namespace Quiz
                         selectedIndexes.Add(index - 1);
                     }
                 }
-
+                //Перевіряємо чи ВСІ відповіді співпадають
                 if (selectedIndexes.Count == question.CorrectAnswers.Count &&
                     question.CorrectAnswers.All(selectedIndexes.Contains))
                 {
-                    correctAnswersCount++;
+                    ++correctAnswersCount;
                 }
+                ++progress;
             }
 
             // Отримуємо час закінчення тесту
@@ -72,12 +72,21 @@ namespace Quiz
             return new QuizResult(userName, Topic, Questions.Count, correctAnswersCount, startTime, endTime);
 
         }
-
-        #endregion
-        //===========================================
-        #region Own methods
-
-        #endregion
+        private void StartupInformation()
+        {
+            Console.WriteLine($"{new string('-', 40)}\nYou need to answer {Questions.Count} questions on {Topic}.\n" +
+                $"There may be several correct answers. \nIf you do not indicate all correct answers or indicate more,\n" +
+                $"then the question will not be counted as correctly completed. \nPress any key to start.\n{new string('-', 40)}");
+            Console.ReadKey();
+        }
+        private void ShowInformationInQuiz(string user, int correctAnswersCount, int progress, Question question)
+        {
+            Console.WriteLine($"=========================== {Topic} quiz ===========================");
+            Console.WriteLine($"User: {user}. Progress: {progress}/{Questions.Count}. Result: {correctAnswersCount}\n");
+            Console.WriteLine(question.Text);
+            for (int i = 0; i < question.Options.Count; i++)
+                Console.WriteLine($"{i + 1}. {question.Options[i]}");
+        }
 
     }
 }
