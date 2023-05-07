@@ -16,7 +16,7 @@ using System.Xml;
 namespace Quiz
 {
     [Serializable]
-    internal class QuizManager //розбити на partial 
+    internal class QuizManager
     {
         #region Basic data
         private Dictionary<string, User> _users;
@@ -398,12 +398,11 @@ namespace Quiz
         #region User panel
         private void UserPanel(User user)
         {
-            Console.Clear();
-            Console.WriteLine("============== Users control panel ==============");
-            ShowUserInformation(user);
             while (true)
             {
                 Console.Clear();
+                Console.WriteLine("============== Users control panel ==============");
+                ShowUserInformation(user);
                 Console.WriteLine
                 ("1 - Start new Quiz\n" +
                 "2 - Show my statistics\n" +
@@ -461,6 +460,7 @@ namespace Quiz
             }
             while (true)
             {
+                Console.Clear();
                 //Тут ми формуємо квіз і всі атрибути для нього
                 Console.WriteLine("Enter the topic or Enter to return");
                 ShowTopicsList();
@@ -470,11 +470,13 @@ namespace Quiz
                 if (!_questions.ContainsKey(topic) && !"Mixed questions".Contains(topic))
                 {
                     Console.WriteLine("Invalid topic name!");
+                    Console.ReadKey();
                     continue;
                 }
                 if (!"Mixed questions".Contains(topic) && _questions[topic].Count < 20)
                 {
                     Console.WriteLine("Unfortunately, the topic does not contain an adequate number of questions in order to form a test from this topic");
+                    Console.ReadKey();
                     continue;
                 }
                 //Формуємо квіз
@@ -850,7 +852,7 @@ namespace Quiz
                     Console.WriteLine(question.Text);
                     Console.WriteLine("Is this the question you are looking for? (y/n)");
                     if (Console.ReadKey().Key == ConsoleKey.Y)
-                            return question;
+                        return question;
                 }
             }
 

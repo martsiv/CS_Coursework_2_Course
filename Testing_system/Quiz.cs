@@ -46,7 +46,7 @@ namespace Quiz
                 ShowInformationInQuiz(userName, correctAnswersCount, progress, question);
                 //Зчитуємо варіанти відповідей посимвольно
                 Console.Write("Your answer(s): ");
-                string[] selectedAnswers = Console.ReadLine()?.Split(",");
+                string[] selectedAnswers = Console.ReadLine()?.Split(" ");
                 List<int> selectedIndexes = new List<int>();
                 foreach (string answer in selectedAnswers)
                 {
@@ -75,7 +75,8 @@ namespace Quiz
         private void StartupInformation()
         {
             Console.WriteLine($"{new string('-', 40)}\nYou need to answer {Questions.Count} questions on {Topic}.\n" +
-                $"There may be several correct answers. \nIf you do not indicate all correct answers or indicate more,\n" +
+                $"There may be several correct answers. If you want to select multiple options,\n" +
+                $"write them with a Space and then press Enter. If you do not indicate all correct answers or indicate more,\n" +
                 $"then the question will not be counted as correctly completed. \nPress any key to start.\n{new string('-', 40)}");
             Console.ReadKey();
         }
